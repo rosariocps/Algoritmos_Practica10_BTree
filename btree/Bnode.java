@@ -1,7 +1,6 @@
 package btree;
 
 import java.util.ArrayList;
- 
 
 public class BNode<E>{
     protected ArrayList<E> keys;
