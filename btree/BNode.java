@@ -18,12 +18,12 @@ public class BNode<E>{
         this.childs.add(null);
     }
 
-    public boolean nodeFull() {
-        return false;
+    public boolean nodeFull(int maxKeys) {
+        return this.count == maxKeys;
     }
 
     public boolean nodeEmpty() {
-        return false;
+        return this.count == 0;
     }
 
     public boolean searchNode() {
