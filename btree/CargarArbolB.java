@@ -57,7 +57,7 @@ public class CargarArbolB {
     }
 
     public static void main(String[] args) {
-        String ruta = "C:/A_RO_ARCHIVES/UNI/Semestre 5/Algoritmos/Practica10_ArbolB/btree/arbolB.txt";
+        String ruta = "C:/A_RO_ARCHIVES/UNI/Semestre 5/Algoritmos/Algoritmos_Practica10BTree/btree/arbolB.txt";
         cargarDesdeArchivo(ruta);
     }
 }
