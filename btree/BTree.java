@@ -23,10 +23,10 @@ public class BTree<E extends Comparable<E>> {
 
     public void insert(E cl) {
         up = false;
-        E mediana; // esta es la que sube
+        E mediana;
         mediana = push(this.root, cl);
         if (up) {
-            BNode<E> pnew = new BNode<E>(this.order); // nodo padre especial -> root
+            BNode<E> pnew = new BNode<E>(this.order);
             pnew.count = 1;
             pnew.keys.set(0, mediana);
             pnew.childs.set(0, this.root);
@@ -112,7 +112,6 @@ public class BTree<E extends Comparable<E>> {
         return median;
     }
 
-    //    ---------------------------Delete------------------------------------
     public void remove(E cl) {
         delete(root, cl);
         if (root != null && root.count == 0) {
