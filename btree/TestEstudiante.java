@@ -23,7 +23,7 @@ public class TestEstudiante {
             gestor.insertar(new RegistroEstudiante(122, "Karina"));
             gestor.insertar(new RegistroEstudiante(108, "Juan")); // Duplicado
         } catch (ItemDuplicated e) {
-            System.err.println("⚠️ Error al insertar: " + e.getMessage());
+            System.err.println("Error al insertar: " + e.getMessage());
         }
 
         System.out.println("Árbol B generado:");
