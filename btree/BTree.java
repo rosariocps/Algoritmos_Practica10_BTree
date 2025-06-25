@@ -6,6 +6,10 @@ public class BTree<E extends Comparable<E>> {
     private boolean up;
     private BNode<E> nDes;
 
+    public BNode<E> getRoot() {
+        return this.root;
+    }
+
     public BTree(int orden) {
         this.order = orden;
         this.root = null;
