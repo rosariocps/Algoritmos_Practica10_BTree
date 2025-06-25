@@ -1,5 +1,9 @@
 package btree;
 
+import exceptions.ItemNotFound;
+import exceptions.ExceptionIsEmpty;
+import exceptions.ItemDuplicated;
+
 public class BTree<E extends Comparable<E>> {
     public BNode<E> root;
     private int order;
@@ -25,7 +29,7 @@ public class BTree<E extends Comparable<E>> {
         return this.order;
     }
 
-    public void insert(E cl) {
+    public void insert(E cl) throws ItemDuplicated {
         up = false;
         E mediana;
         mediana = push(this.root, cl);
@@ -39,7 +43,7 @@ public class BTree<E extends Comparable<E>> {
         }
     }
 
-    private E push(BNode<E> current, E cl) {
+    private E push(BNode<E> current, E cl) throws ItemDuplicated {
         int pos[] = new int[1];
         E mediana;
 
@@ -50,9 +54,8 @@ public class BTree<E extends Comparable<E>> {
         } else {
             boolean fl = current.searchNode(cl, pos);
             if (fl) {
-                System.out.println("Item duplicado\n");
                 up = false;
-                return null;
+                throw new ItemDuplicated("Elemento duplicado: " + cl);
             }
 
             mediana = push(current.childs.get(pos[0]), cl);
@@ -116,16 +119,16 @@ public class BTree<E extends Comparable<E>> {
         return median;
     }
 
-    public void remove(E cl) {
+    public void remove(E cl) throws ItemNotFound {
         delete(root, cl);
         if (root != null && root.count == 0) {
             root = root.childs.get(0);
         }
     }
 
-    public boolean delete(BNode<E> node, E key) {
+    public boolean delete(BNode<E> node, E key) throws ItemNotFound {
         if (node == null) {
-            return false;
+            throw new ItemNotFound("Elemento no encontrado: " + key);
         }
 
         int pos[] = new int[1];
@@ -347,7 +350,8 @@ public class BTree<E extends Comparable<E>> {
         }
     }
 
-    public boolean search(E cl) {
+    public boolean search(E cl) throws ExceptionIsEmpty {
+        if (isEmpty()) throw new ExceptionIsEmpty("El árbol está vacío.");
         return searchRecursive(this.root, cl);
     }
 

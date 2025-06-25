@@ -1,5 +1,8 @@
 package btree;
 
+import exceptions.ItemDuplicated;
+import exceptions.ItemNotFound;
+
 public class BTreeEstudiante {
     private BTree<RegistroEstudiante> arbol;
 
@@ -7,11 +10,11 @@ public class BTreeEstudiante {
         arbol = new BTree<>(orden);
     }
 
-    public void insertar(RegistroEstudiante estudiante) {
+    public void insertar(RegistroEstudiante estudiante) throws ItemDuplicated {
         arbol.insert(estudiante);
     }
 
-    public void eliminar(int codigo) {
+    public void eliminar(int codigo) throws ItemNotFound {
         arbol.remove(new RegistroEstudiante(codigo, ""));
     }
 
