@@ -7,8 +7,8 @@ import exceptions.ItemDuplicated;
 public class BTree<E extends Comparable<E>> {
     public BNode<E> root;
     private int order;
-    private boolean up;
-    private BNode<E> nDes;
+    private boolean up; //par que en la insercion, si al subir recursivamente necesitamos propagar un split
+    private BNode<E> nDes; //rama derecha creada cuando hacemos un split de nodo
 
     public BNode<E> getRoot() {
         return this.root;
@@ -30,93 +30,122 @@ public class BTree<E extends Comparable<E>> {
     }
 
     public void insert(E cl) throws ItemDuplicated {
-        up = false;
-        E mediana;
+        up = false; // nos indicara si hay split que debe subir una mediana
+        E mediana; //la clave que sube cuando hacemos un split
+        //push q es un metodo recursivo que baja hasta llegar a una hoja para insertar
+        //puede insertar o divir nodos en el camino
         mediana = push(this.root, cl);
-        if (up) {
-            BNode<E> pnew = new BNode<E>(this.order);
-            pnew.count = 1;
-            pnew.keys.set(0, mediana);
-            pnew.childs.set(0, this.root);
-            pnew.childs.set(1, nDes);
-            this.root = pnew;
+        //si up es true , hubo split en la antigua raiz
+        //osea este es solo en caso no se pudo resolver y hay que crear una nueva raiz
+        if (up) { 
+            BNode<E> pnew = new BNode<E>(this.order); //creamos un nodo nuevo con su orden (este sera la raiz)
+            pnew.count = 1; //deicmos que solo va tener una clave q va ser la mediana
+            pnew.keys.set(0, mediana); //colocamos la mediana en la posicion 0 de pnew
+            pnew.childs.set(0, this.root); //apunta al árbol viejo (subárbol izquierdo).
+            pnew.childs.set(1, nDes); //childs[1] xq aounta a nDes, q es el subarbol derecho creado en el split
+            this.root = pnew; //x utlimo asignamos pnew como la nuevz raiz del arbol
         }
     }
 
     private E push(BNode<E> current, E cl) throws ItemDuplicated {
+        //arreglo de una posicion,para guarar la posicion  dentro del current donde se encontro o deberia estar la clave
         int pos[] = new int[1];
         E mediana;
-
-        if (current == null) {
-            up = true;
-            nDes = null;
-            return cl;
-        } else {
-            boolean fl = current.searchNode(cl, pos);
-            if (fl) {
-                up = false;
-                throw new ItemDuplicated("Elemento duplicado: " + cl);
+        //si llegamos aqui es xq hemos llegado mas abajo de una hoja
+        // osea aqui insertamos
+        if (current == null) { 
+            up = true; //para decirle al padre que traemos una clave para insertar
+            nDes = null; //xq aun no hya subarbol derecho
+            return cl; //la clave sube como mediana a insertar en el padre
+        } else { //sino
+            boolean fl = current.searchNode(cl, pos); //aqui verificamos si ya existe la clave en el nodo
+            if (fl) { //si es true
+                up = false; 
+                throw new ItemDuplicated("Elemento duplicado: " + cl); //lanzamos excepcion
             }
-
+            //hacemos recursion para al hijo que si es correcto
             mediana = push(current.childs.get(pos[0]), cl);
 
-            if (up) {
-                if (current.nodeFull(this.order - 1)) {
-                    mediana = dividedNode(current, mediana, pos[0]);
-                } else {
+            if (up) { //al volver, si up es true significa que traigo una mediana por insertar
+                //si el nodo esta lleno lo divido y obtengo la nueva mediana
+                if (current.nodeFull(this.order - 1)) { //orden -1 xq ese es el num max de claves
+                    mediana = dividedNode(current, mediana, pos[0]); 
+                } else { //si hay espacio, inserto la mediana y el subarbol derecho
                     putNode(current, mediana, nDes, pos[0]);
-                    up = false;
+                    up = false; //ya que ya acomodamos la clave, no hay mas split
                 }
             }
-            return mediana;
+            return mediana; //devuelvo la mediana para que el nivel superior lo maneje
         }
     }
 
     private void putNode(BNode<E> current, E cl, BNode<E> rd, int k) {
-        int i;
-
+        int i; //indice para el bucle 
+        //empieza desde la ultima clave hasta k (posicion q queremos insertar)
         for (i = current.count - 1; i >= k; i--) {
-
+            //cda clave en i se copia a i+1 (desplazo hacia la derecha), para abrir espacio a k  (poicicion deseada)
             current.keys.set(i + 1, current.keys.get(i));
+            //cada referencia de hijo en i+1 se mueve a i+2, osea desplzao hacia la derecha
             current.childs.set(i + 2, current.childs.get(i));
         }
-
-
-        current.keys.set(k, cl);
-        current.childs.set(k + 1, rd);
+        current.keys.set(k, cl); //inserto la nueva clave en la posicion k (poicicion deseada)
+        current.childs.set(k + 1, rd);  //enlazo el subarbol derecho rd como hijo en la posición k+1
+        //incrementamos el contador de las claves del nodo
         current.count++;
     }
 
     private E dividedNode(BNode<E> current, E cl, int k) {
+        //guardo el subárbol derecho recibido antes del split
         BNode<E> rd = nDes;
-        int i, posMdna;
+        int i, posMdna; //declaramos estas variables
 
-        // Calcular posición de la mediana
+        // Calcular posicion de la mediana
+        // Elige dónde cortar el nodo:
+        // si la clave nueva va antes o en el medio, uso order/2; si va después, uso order/2 + 1
         posMdna = (k <= this.order / 2) ? this.order / 2 : this.order / 2 + 1;
-        nDes = new BNode<E>(this.order);
+        nDes = new BNode<E>(this.order); //nDes será el hermano derecho tras el split
 
-        // Mover claves y hijos al nuevo nodo
+        // Mover claves y hijos al nDes(nuevonodo), posteriores a la mediana
         for (i = posMdna; i < this.order - 1; i++) {
+            //trasladamos la clave i desde current a la posición (i - posMdna) de nDes
             nDes.keys.set(i - posMdna, current.keys.get(i));
+            //aqui vamos a mover el hijo a la derecha de es clave
+            //current.childs.get(i+1) es el hijo de la derecha current.keys.get(i)
+            // lo colocamos en nDes.childs en la posicion (i - posMdna + 1),
+            // que conserva su relacion derecha respecto a la clave movida
             nDes.childs.set(i - posMdna + 1, current.childs.get(i + 1));
         }
+        //actualizamos cuantas claves tiene cada nodo despues del split:
 
+        //el nuevo nodo derecho nDes recibe todas las claves que quedaron tras la mediana,
+        // que son desde posMdna hasta el final (order–1 claves en total)
         nDes.count = (this.order - 1) - posMdna;
+
+        //el nodo original (lado izquierdo) conserva las claves desde 0 hasta posMdna–1,
+        //x lo q ahora su conteo es justo posMdna
         current.count = posMdna;
 
-        // Insertar el nuevo elemento en el nodo correspondiente
+        //insertar la nueva clave cl y su subarbol rd en el nodo que corresponda:
+
+        //si k esta en la primera mitad la clave va al nodo izquierdo-current
+        //si k esta en la segunda mitad ponemos el indice-k - posMdna
+        //y la clave va al nodo derecho-nDes
         if (k <= this.order / 2) {
             putNode(current, cl, rd, k);
         } else {
             putNode(nDes, cl, rd, k - posMdna);
         }
 
-        // Obtener la mediana que subirá
+        // Obtener la mediana que subira
+
+        //aqui tomammos la ultima clave valida en current, q es la mediwana q debemos subir al padre
         E median = current.keys.get(current.count - 1);
+        //despues, el hijo q estaa a la dercha de la clave en current (indice count) pasa a ser el 1er hijo de nDes
         nDes.childs.set(0, current.childs.get(current.count));
+        //decrmnta para la extraccion de la medinaa
         current.count--;
 
-        return median;
+        return median; //retonamos la mediana para q el nivel sperio la inserteeeee
     }
 
     public void remove(E cl) throws ItemNotFound {
@@ -127,27 +156,36 @@ public class BTree<E extends Comparable<E>> {
     }
 
     public boolean delete(BNode<E> node, E key) throws ItemNotFound {
+        //Si el nodo es null, la clave no existe
         if (node == null) {
-            throw new ItemNotFound("Elemento no encontrado: " + key);
+            throw new ItemNotFound("Elemento no encontrado: " + key); //lanza excepcion
         }
-
+        //arreglo de una posicion, para guardar la posicion
         int pos[] = new int[1];
-        boolean found = node.searchNode(key, pos);
+        boolean found = node.searchNode(key, pos); //buscar la clave o la posicion de insercion en este nodo
 
-        if (found) {
-            if (node.childs.get(pos[0]) != null) {
+        if (found) { //si esta en este nodo 
+            if (node.childs.get(pos[0]) != null) { //y tiene hijo derecho, es interno
+                //borramos la clave dejando el hueci en este mismo nodo
                 removeKey(node, pos[0]);
                 return true;
+            //sino
             } else {
+                //si es hoja, reemplazamos por el predecesor (max del arbol izq)
                 E pred = getPredecessor(node, pos[0]);
+                //reempzamos el pred y luego borramos esaclave en la hoja
                 node.keys.set(pos[0], pred);
+                //borro la clave predecesora en la hoja
                 return delete(node.childs.get(pos[0]), pred);
             }
+        //sino - found ==false
         } else {
+            //la clave no esta en este nodo,
             if (node.childs.get(pos[0]) != null) {
-                return false;
-            } else {
+                return false; //retornamos false
+            } else { //si si existe un hijo bajamos recursivamente
                 boolean isDeleted = delete(node.childs.get(pos[0]), key);
+                //luego de borrarlo vemos si ese hijo quedo con pocas claves y hay que arreglar underflow
                 if (node.childs.get(pos[0]).count < (order - 1) / 2) {
                     fix(node, pos[0]);
                 }
@@ -155,24 +193,31 @@ public class BTree<E extends Comparable<E>> {
             }
         }
     }
-
+    //para eliminar la clave en la posicion index de un nodo hoja o interno
     private void removeKey(BNode<E> node, int index) {
+        //vamos a desplzar todas las claves a la derecha de index 
         for(int i = index; i < node.count - 1; i++) {
-            node.keys.set(i, node.keys.get(i + 1));
+            node.keys.set(i, node.keys.get(i + 1)); //una posicion a al izq
         }
+        //borramos el duplicado que queda al final
         node.keys.set(node.count - 1, null);
-        node.count--;
+        node.count--; //actualizamos el conteo de las claves ya q eliminamos
     }
-
+    //para tener el valor mayor del subarbol izq
     private E getPredecessor(BNode<E> node, int index) {
+        //vamos al hijo izq en la posicion del index
         BNode<E> current = node.childs.get(index);
+        //bucle para bajar en el subarbol izq , el valor mas a la derecha , el mayor
         while (current.childs.get(index + 1) != null) {
             current = current.childs.get(index + 1);
         }
+        //cuando ya llegamos a l ultima clave ese es el predecesor
         return current.keys.get(current.count - 1);
     }
 
+    //fusiona el hijo en 'index' con su hermano a la derecha (index+1)
     private void merge(BNode<E> parent, int index) {
+        //aqui obtenemos referncias a los dos hijos
         BNode<E> left = parent.childs.get(index);
         BNode<E> right = parent.childs.get(index + 1);
 
